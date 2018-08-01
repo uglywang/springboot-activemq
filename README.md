@@ -1,3 +1,4 @@
+[TOC]
 # SpringBoot-ActiveMq
 一个简单的整合案例, 初步实现 `activemq` 的 `queue` 队列模式 和 `topic` 订阅模式
 
