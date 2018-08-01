@@ -31,16 +31,36 @@ public class JmsConfig {
 
     }
 
+    /**
+     * 普通订阅
+     */
     @Bean("jmsTopicListenerContainerFactory")
     public JmsListenerContainerFactory jmsTopicListenerContainerFactory(ConnectionFactory connectionFactory) {
         DefaultJmsListenerContainerFactory factory =
                 new DefaultJmsListenerContainerFactory();
         factory.setConnectionFactory(connectionFactory);
         //重连间隔时间
+        factory.setRecoveryInterval(1000L);
         factory.setPubSubDomain(true);
         return factory;
-
     }
 
+    /**
+     * 持久订阅
+     */
+    @Bean("jmsTopicListenerContainerFactory2")
+    public JmsListenerContainerFactory jmsTopicListenerContainerFactory2(ConnectionFactory connectionFactory) {
+        DefaultJmsListenerContainerFactory factory =
+                new DefaultJmsListenerContainerFactory();
+        factory.setConnectionFactory(connectionFactory);
+        //重连间隔时间
+        factory.setRecoveryInterval(1000L);
+        factory.setPubSubDomain(true);
+
+        // 给订阅者一个名字,并开启持久订阅
+        factory.setClientId("client_id");
+        factory.setSubscriptionDurable(true);
+        return factory;
+    }
 
 }

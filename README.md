@@ -1,9 +1,25 @@
 # SpringBoot-ActiveMq
-一个简单的整合案例, 初步实现 `activemq` 的 `queue` 队列模式 和 `topic` 订阅模式
+一个简单的整合案例, 初步实现 `activemq` 的 `queue` 队列模式 和 `topic` 订阅模式 (普通订阅, 持久订阅)
 
 ## 准备工作
 - springboot2.0.3
 - 如果要使用 `activemq pool` 需要另外加入 `activemq-pool` 包
+```mxml
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-activemq</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-web</artifactId>
+    </dependency>
+
+    <!--  启用JMS 的池化, 就一定要加上这个 jar-->
+    <dependency>
+        <groupId>org.apache.activemq</groupId>
+        <artifactId>activemq-pool</artifactId>
+    </dependency>
+```
 
 ## 简介
 `spring-jms-*.RELEASE.jar` 有提供 `JmsMessagingTemplate` 给我们使用, 只需要在配置类上加上 `@EnableJms` 即可,无特殊要求,我们直接拿来用即可.
@@ -172,5 +188,46 @@ public class TopicReceiver {
 
 ```
 
+### 监听 `广播形式` 消息, 持久订阅
+```
+    /**
+     * 持久订阅
+     */
+    @Bean("jmsTopicListenerContainerFactory2")
+    public JmsListenerContainerFactory jmsTopicListenerContainerFactory2(ConnectionFactory connectionFactory) {
+        DefaultJmsListenerContainerFactory factory =
+                new DefaultJmsListenerContainerFactory();
+        factory.setConnectionFactory(connectionFactory);
+        //重连间隔时间
+        factory.setRecoveryInterval(1000L);
+        factory.setPubSubDomain(true);
+
+        // 给订阅者一个名字,并开启持久订阅
+        factory.setClientId("client_id");
+        factory.setSubscriptionDurable(true);
+        return factory;
+    }
+```
+在 `jmsConfig` 中 配置类中加入 `bean`, 与 `普通订阅` 基本相同, 出别在与 `factory.setClientId("client_id")`, 和 `factory.setSubscriptionDurable(true)`. 未订阅者设置一个 客户端ID,并且开启持久订阅的功能,
+这样在的话, 在你订阅某一个主题之后, mq服务会记住你的 `ClientId`, 下次即使你不在线, 消息会被持久化到硬盘, 等你上线后再发送给你. 监听如下:
+```java
+@Component
+public class Topic2Receiver {
+
+    @JmsListener(destination = "topicTest", containerFactory = "jmsTopicListenerContainerFactory2")
+    public void receive(String msg) {
+        System.out.println("这是持久订阅: " + msg);
+    }
+
+}
+```
+
 ## 测试
+### 普通订阅 和 列队模式
 可通过浏览器访问 `jms/queue?value=test` 和 `jms/topic?value=test` 来出发消息的发送,来观察控制台获取信息的情况
+
+### 持久化的测试
+- 第一次启动, 会在浏览器 `ActiveMQ` 管理界面的 `Subscribers` 也签多出一个 `ClientID` 名为 `client_id` 的订阅者. `Active Durable Topic Subscribers` 表示当前持久订阅者在线, `Offline Durable Topic Subscribers` 表示当前
+持久订阅者不在线.
+- 关闭你的服务, 注释掉 `Topic2Receiver` 中订阅的方法, 再次启动项目. `Offline Durable Topic Subscribers` 中会出现你的 `clientID`, 表示这个订阅者下线了. 你通过 `jms/topic?value=test` 这个接口发送消息, 会发现`普通订阅者` 正常的收到消息
+- 关闭服务, 打开刚才注释调的代码. 重新启动项目, 会发现上一次你发送的消息, 这个时候才收到
