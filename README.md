@@ -1,4 +1,3 @@
-[TOC]
 # SpringBoot-ActiveMq
 一个简单的整合案例, 初步实现 `activemq` 的 `queue` 队列模式 和 `topic` 订阅模式
 
@@ -7,7 +6,7 @@
 - 如果要使用 `activemq pool` 需要另外加入 `activemq-pool` 包
 
 ## 简介
-`spring-jms-*.RELEASE.jar` 有提供 `JmsMessagingTemplate` 给我们使用, 无特殊要求,我们直接拿来用即可.
+`spring-jms-*.RELEASE.jar` 有提供 `JmsMessagingTemplate` 给我们使用, 只需要在配置类上加上 `@EnableJms` 即可,无特殊要求,我们直接拿来用即可.
 
 ## queue模式 与 topic模式
 `**queue模式**` `点对点的发送信息`, 点对点通信，每个消息只有一个消费者，消息保证送达，离线消费者可以在下次上线后收到之前积压的消息。
